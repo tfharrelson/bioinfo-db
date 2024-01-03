@@ -54,7 +54,11 @@ func DataQueryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// now what do i do with the request??? lol
-	reactions := FindReactions(dataRequest)
+	reactions, err := FindReactions(dataRequest)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Something went wrong while fetching reaction data. Error message: " + err.Error()))
+	}
 
 	// write the response
 	response := GetReactionNetworkResponse{Reactions: reactions}
@@ -68,7 +72,7 @@ func DataQueryHandler(w http.ResponseWriter, r *http.Request) {
 
 // let's hard code a reaction for now
 // TODO: hook up a database to allow for dynamically querying different reactions based on the input requests
-func FindReactions(req *GetReactionNetworkRequest) []Reaction {
+func FindReactions(req *GetReactionNetworkRequest) ([]Reaction, error) {
 
 	// define the substrates
 	pyr := Metabolite{ID: "C00032", SmilesString: "CC(=O)C(=O)[O-]"}
@@ -89,5 +93,5 @@ func FindReactions(req *GetReactionNetworkRequest) []Reaction {
 		ID:         "R00014",
 		Enzymes:    []Enzyme{pyrDehy, aceSynth, pyrDecarb},
 	}
-	return []Reaction{rxn}
+	return []Reaction{rxn}, nil
 }
