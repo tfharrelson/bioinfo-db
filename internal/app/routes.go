@@ -2,10 +2,10 @@ package app
 
 import (
 	"encoding/json"
-	"net/http"
-
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"net/http"
 )
 
 // Constants for use in database validation
@@ -22,17 +22,20 @@ type WebAppRoute struct {
 }
 
 func NewRoute(route string, handler http.Handler) WebAppRoute {
-	// TODO: make sure that I need this! it looks like it may be useful as I
+	// TODO: add some middleware. it looks like it may be useful as I
 	// add some boilerplate middleware to every route
 	return WebAppRoute{route: route, handler: handler}
 }
 
 // define the custom route structs
-func CreateRoutes(router *mux.Router) *mux.Router {
+func CreateRoutes(router *mux.Router, driver *neo4j.DriverWithContext) *mux.Router {
 
 	router.HandleFunc("/health-check", http.HandlerFunc(HealthCheckHandler))
 
-	router.HandleFunc("/api/data", http.HandlerFunc(DataQueryHandler))
+	router.HandleFunc(
+		"/api/data",
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { DataQueryHandler(w, r, driver) }),
+	)
 
 	return router
 }
@@ -42,7 +45,7 @@ func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
 }
 
-func DataQueryHandler(w http.ResponseWriter, r *http.Request) {
+func DataQueryHandler(w http.ResponseWriter, r *http.Request, driver *neo4j.DriverWithContext) {
 	// decode the request
 	dataRequest := &GetReactionNetworkRequest{}
 	err := schema.NewDecoder().Decode(dataRequest, r.URL.Query())
@@ -53,8 +56,8 @@ func DataQueryHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("encountered an error while parsing the request: " + err.Error()))
 	}
 
-	// now what do i do with the request??? lol
-	reactions, err := FindReactions(dataRequest)
+	// query the database for reactions
+	reactions, err := FindReactions(dataRequest, driver)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Something went wrong while fetching reaction data. Error message: " + err.Error()))
@@ -72,7 +75,7 @@ func DataQueryHandler(w http.ResponseWriter, r *http.Request) {
 
 // let's hard code a reaction for now
 // TODO: hook up a database to allow for dynamically querying different reactions based on the input requests
-func FindReactions(req *GetReactionNetworkRequest) ([]Reaction, error) {
+func FindReactions(req *GetReactionNetworkRequest, driver *neo4j.DriverWithContext) ([]Reaction, error) {
 
 	// define the substrates
 	pyr := Metabolite{ID: "C00032", SmilesString: "CC(=O)C(=O)[O-]"}

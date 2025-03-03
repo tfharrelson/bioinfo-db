@@ -11,7 +11,7 @@ type GetReactionNetworkResponse struct {
 	Reactions []Reaction `json:"rxns"`
 }
 
-// Nested structures that support the main get/post requests/responses 
+// Nested structures that support the main get/post requests/responses
 type Reaction struct {
 	Substrates []Metabolite `json:"substrates"`
 	Products   []Metabolite `json:"products"`
@@ -25,7 +25,7 @@ type Metabolite struct {
 }
 
 type Enzyme struct {
-    ID string `json:"enzyme_id"`
-    Name string `json:"name"`
-    Sequence string `json:"sequence"`
+	ID       string `json:"enzyme_id"`
+	Name     string `json:"name"`
+	Sequence string `json:"sequence"`
 }

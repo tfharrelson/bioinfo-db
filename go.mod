@@ -8,3 +8,5 @@ require (
 	github.com/gorilla/schema v1.2.1
 	github.com/lib/pq v1.10.9
 )
+
+require github.com/neo4j/neo4j-go-driver/v5 v5.17.0
